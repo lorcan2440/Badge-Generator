@@ -47,10 +47,13 @@ MAIN_TEXT_COL = '#000000'
 TITLE_CARD_COL = '#01385f'
 TITLE_TEXT_COL = '#ffffff'
 
-# fonts
-TITLE_FONT_SIZE = ImageFont.truetype('ariali.ttf', 80)
-INFO_KEY_FONT_SIZE = ImageFont.truetype('arialbd.ttf', 60)
-INFO_VALUE_FONT_SIZE = ImageFont.truetype('arial.ttf', 60)
+# fonts - find font filenames by going to C:/Windows/Fonts.
+# choose a family and font and view properties.
+TITLE_FONT_SIZE = ImageFont.truetype('BOD_BI.TTF', 90)
+PRIMARY_KEY_FONT_SIZE = ImageFont.truetype('arial.ttf', 60)
+PRIMARY_VALUE_FONT_SIZE = ImageFont.truetype('arialbd.ttf', 60)
+SECONDARY_KEY_FONT_SIZE = ImageFont.truetype('arialbi.ttf', 60)
+SECONDARY_VALUE_FONT_SIZE = ImageFont.truetype('ariali.ttf', 60)
 
 # title card
 TITLE_CARD_HEIGHT_RATIO = 0.18
@@ -67,7 +70,7 @@ LOGO_WIDTH_RATIO = 0.29
 LOGO_HEIGHT_RATIO = 0.41
 
 # information
-PRIMARY_KEYS = 'Name:\nRole:\nCompany:'
+PRIMARY_KEYS = 'Name:\nRole:\nAt'
 SECONDARY_KEYS = 'Pronouns:\nID No.:'
 
 # info dimensions and relations
@@ -295,10 +298,10 @@ def photo_from_bbox(img: np.ndarray, bbox: tuple[int], expand_dim_first: str = '
 
     if show_img:
         img_marked = cv2.rectangle(img.copy(), photo_bbox[:2], photo_bbox[2:], (255, 0, 0),
-            thickness=img_width // 400, lineType=cv2.LINE_AA)
+            thickness=img_width // 400)
         img_marked = cv2.rectangle(img_marked, bbox[:2], bbox[2:4], (0, 0, 255),
-            thickness=img_width // 400, lineType=cv2.LINE_AA)
-        cv2.namedWindow('Found Boxes', flags=cv2.WINDOW_AUTOSIZE)
+            thickness=img_width // 400)
+        cv2.namedWindow('Found Boxes')
         cv2.imshow('Found Boxes', img_marked)
         cv2.waitKey(0)
 
@@ -377,16 +380,16 @@ def generate_id_badge_template() -> Image.Image:
     for key, (x, y, is_primary) in INFO_KEY_POS.items():
         if is_primary:
             imagedraw.multiline_text((x, y), key, fill=MAIN_TEXT_COL,
-                spacing=INFO_PRIMARY_SPACING * BADGE_HEIGHT, font=INFO_KEY_FONT_SIZE)
+                spacing=INFO_PRIMARY_SPACING * BADGE_HEIGHT, font=PRIMARY_KEY_FONT_SIZE)
         else:
             bbox = imagedraw.multiline_textbbox((x, y), key,
                 spacing=INFO_SECONDARY_SPACING * BADGE_HEIGHT,
-                font=INFO_KEY_FONT_SIZE, align='center')
+                font=SECONDARY_KEY_FONT_SIZE, align='center')
             dx = ((1 - BORDER - LOGO_WIDTH_RATIO) - (2 * BORDER + PHOTO_WIDTH_RATIO \
                 + (bbox[2] - bbox[0]) / BADGE_WIDTH)) * BADGE_WIDTH // 2
             imagedraw.multiline_text((x + dx, y), key, fill=MAIN_TEXT_COL,
                 spacing=INFO_SECONDARY_SPACING * BADGE_HEIGHT,
-                font=INFO_KEY_FONT_SIZE, align='center')
+                font=SECONDARY_KEY_FONT_SIZE, align='center')
 
     # return a PIL.Image.Image, already opened and ready
     return image
@@ -396,20 +399,29 @@ def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
         pronouns: str, id_no: str, photo: Union[np.ndarray, Image.Image],
         export_dir: str = None, template: Union[str, Image.Image] = BADGE_TEMPLATE,
         filename_format: str = r"f'{lastname.upper()}_{firstname}.png'",
-        badge_name_format: str = None) -> Image.Image:
+        primary_value_format: str = r"f'{name}\n{role}\n{company}'",
+        secondary_value_format: str = r"f'{pronouns}\n{id_no.upper()}'") -> Image.Image:
     '''
     Creates and saves a filled badge from given information and the template.
-    
+   
     #### Arguments
-    
+
     `firstname`, `lastname`, `role`, `company`, `pronouns`, `id_no` (str): text field values
     `photo` (Union[np.ndarray, Image.Image]): photo to use, in PIL Image or NumPy array form
     `export_dir` (str, default = BADGES_DIR): where to save badge image
     `template` (Union[str, Image.Image], default = BADGE_TEMPLATE): badge to fill in
     `filename_format` (str, default = r"f'{lastname.upper()}_{firstname}.png'"): format to save
-        individual badges as, referring to the passed arguments
-    `badge_name_format` (str, default = None): format to write the name field on the badge,
-        referring to the passed arguments. Default form is {firstname} {lastname}.
+        individual badges as
+    `primary_value_format` (str, default = r"f'{name}\\n{role}\\n{company}'"): format to write
+        primary values as
+    `secondary_values_format` (str, default = r"f'{pronouns}\\n{id_no.upper()}'"): format to write
+        secondary values as
+        
+    Format strings should be entered as raw f-strings, such as the default examples. The
+    expression inside the raw string will be evaluated in the context of all passed variables, plus
+    some additional useful forms: `name` (firstname lastname), `initials_lastname` (F. LASTNAME),
+    `name_pronouns` (firstname lastname (pronouns)), `role_company` (role at company).
+    Use a raw newline r"\\n" to separate the fields.
 
     #### Returns
 
@@ -420,10 +432,11 @@ def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
         if not os.path.isdir(export_dir):
             os.mkdir(export_dir)
 
-    if badge_name_format is not None:
-        name = eval(badge_name_format, locals())
-    else:
-        name = f'{firstname} {lastname}'
+    _ = [firstname, lastname, role, company, pronouns, id_no, photo]
+    name = f'{firstname} {lastname}'
+    initials_lastname = f"{' '.join([part[0] + '.' for part in firstname.replace('-', ' ').split(' ')])} {lastname}"
+    name_pronouns = f'{name} ({pronouns})'
+    role_company = f'{role} at {company}'
 
     # start from template
     image = template if isinstance(template, Image.Image) else Image.open(template)
@@ -440,34 +453,34 @@ def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
     image.paste(photo, photo_pos)
 
     # info value primary fields
-    info_text_multiline = f'{name}\n{role}\n{company}'
+    info_text_multiline = eval(primary_value_format, locals())
     key_bbox = imagedraw.multiline_textbbox(
         (2 * BORDER * BADGE_WIDTH,
         (4 * BORDER + TITLE_CARD_HEIGHT_RATIO + PHOTO_HEIGHT_RATIO) * BADGE_HEIGHT),
         PRIMARY_KEYS, spacing=INFO_PRIMARY_SPACING * BADGE_HEIGHT,
-        font=INFO_VALUE_FONT_SIZE)
+        font=PRIMARY_VALUE_FONT_SIZE)
     text_x = 4 * BORDER * BADGE_WIDTH + (key_bbox[2] - key_bbox[0])
     text_y = (4 * BORDER + TITLE_CARD_HEIGHT_RATIO + PHOTO_HEIGHT_RATIO) * BADGE_HEIGHT
     imagedraw.multiline_text((text_x, text_y), info_text_multiline,
         fill=MAIN_TEXT_COL, spacing=INFO_PRIMARY_SPACING * BADGE_HEIGHT,
-        font=INFO_VALUE_FONT_SIZE)
+        font=PRIMARY_VALUE_FONT_SIZE)
 
     # info value secondary fields
-    info_text_multiline = f'{pronouns}\n{id_no.upper()}'
+    info_text_multiline = eval(secondary_value_format, locals())
     key_bbox = imagedraw.multiline_textbbox(
         ((2 * BORDER + PHOTO_WIDTH_RATIO) * BADGE_WIDTH,
          (3 * BORDER + TITLE_CARD_HEIGHT_RATIO) * BADGE_HEIGHT),
         info_text_multiline, spacing=INFO_SECONDARY_SPACING * BADGE_HEIGHT,
-        font=INFO_KEY_FONT_SIZE, align='center')
+        font=SECONDARY_VALUE_FONT_SIZE, align='center')
     dx = ((1 - BORDER - LOGO_WIDTH_RATIO) - (2 * BORDER + PHOTO_WIDTH_RATIO \
         + (key_bbox[2] - key_bbox[0]) / BADGE_WIDTH)) * BADGE_WIDTH // 2
     dy = imagedraw.textsize(info_text_multiline,
-        font=INFO_KEY_FONT_SIZE)[1] * INFO_SECONDARY_VERTICAL_OFFSET
+        font=SECONDARY_VALUE_FONT_SIZE)[1] * INFO_SECONDARY_VERTICAL_OFFSET
     text_x = (2 * BORDER + PHOTO_WIDTH_RATIO) * BADGE_WIDTH
     text_y = (3 * BORDER + TITLE_CARD_HEIGHT_RATIO) * BADGE_HEIGHT
     imagedraw.multiline_text((text_x + dx, text_y + dy), info_text_multiline,
         fill=MAIN_TEXT_COL, spacing=INFO_SECONDARY_SPACING * BADGE_HEIGHT,
-        font=INFO_VALUE_FONT_SIZE, align='center')
+        font=SECONDARY_VALUE_FONT_SIZE, align='center')
 
     # save if needed
     if export_dir is not None:
@@ -556,7 +569,7 @@ if __name__ == '__main__':
 
             # get path to submitted photo
             photo_path = f'{lastname.upper()}_{firstname}_{id_no[:4]}.jpg'
-            if 'drive.google' in image_name:
+            if 'https://drive.google.com/open' in image_name:
                 # fetch from Google Drive
                 download_file(image_name, photo_path, service=service, output_dir=PHOTOS_DIR)
                 image_path = os.path.join(PHOTOS_DIR, photo_path)

@@ -1,0 +1,791 @@
+School administrator
+
+Financial advisor
+
+Aerospace engineer
+
+Air ambulance doctor
+
+Air ambulance pilot
+
+Aircraft engineer
+
+Alpine ski racer
+
+Ambulance dispatcher
+
+Trainee business analyst
+
+App developer
+
+Architectural assistant
+
+Architect
+
+Concept artist
+
+Art director
+
+Assistant learning officer
+
+Assistant producer
+
+Assistant producer, radio
+
+Media assistant
+
+Restaurant assistant manager
+
+Audio engineer
+
+Audiologist
+
+Digital engagement apprentice
+
+Events assistant
+
+Barista
+
+Barrister
+
+Biomedical scientist
+
+Bird of prey specialist
+
+Broadcast assistant
+
+Festival build manager
+
+Business development intern
+
+Cake designer
+
+Camera assistant
+
+Camera trainee
+
+Carer
+
+Carpentry
+
+Catchment officer
+
+CEO
+
+Chef
+
+Chef and food vlogger
+
+Chemist
+
+Chocolatier
+
+Dancer and choreographer
+
+Civil engineer technician
+
+Civil engineering apprentice
+
+Cleaner
+
+Clinical photographer
+
+Mobile app developer
+
+Coding events manager
+
+Comedian
+
+Commissioning and development executive
+
+Communications intern
+
+Community education coordinator
+
+Community cohesion officer
+
+Composer
+
+Conservation apprentice
+
+Apprentice conservation officer
+
+Conservation officer
+
+Conservation trainee
+
+Construction manager
+
+Construction site engineer
+
+Senior content executive
+
+Membership coordinator in a museum
+
+Copy editor
+
+Coroner's officer
+
+Corporate social responsibility coordinator
+
+Costume designer for Fantastic Beasts
+
+Costume standby on Fantastic Beasts
+
+Cosmetics creator
+
+Junior creative
+
+Senior creative
+
+Crèche assistant
+
+Events curator
+
+Customer service team manager
+
+Cyber security apprentice
+
+Dancer
+
+Dance choreographer
+
+Data and compliance manager
+
+Dental lab assistant
+
+Dental nurse assistant
+
+Costume designer for Fantastic Beasts
+
+Electrical design engineer
+
+Handbag designer
+
+Jewellery designer
+
+Apprentice wing designer
+
+Garden designer
+
+Graphic designer
+
+User experience designer
+
+App developer
+
+Software developer
+
+Business development intern
+
+Development assistant
+
+Development officer
+
+Head of digital and short form
+
+Digital degree apprentice
+
+Digital engagement apprentice
+
+Digital content producer
+
+Digital marketing exec
+
+Director in fashion wholesale
+
+Director in photography
+
+Director for sports TV
+
+Director at a music publisher
+
+Director at a gaming company
+
+Studio director
+
+Ambulance dispatcher
+
+Emergency medical dispatcher: call taker
+
+DJ and presenter
+
+DJ producer
+
+Accident and emergency doctor
+
+Air ambulance doctor
+
+Drama facilitator
+
+Festival PR director
+
+Festival programme director
+
+Civil engineering apprentice
+
+Civil engineering technician
+
+Digital engagement apprentice
+
+Ecologist
+
+Editor
+
+Content editor
+
+Educational support officer
+
+Educational wellbeing specialist
+
+Electrician
+
+Emergency medical dispatcher: call taker
+
+Emergency medical technician
+
+Engagement manager
+
+Aerospace engineer
+
+Aircraft engineer
+
+Audio engineer and musician
+
+Electrical design engineer
+
+Junior simulation engineer
+
+Sound engineer
+
+Tendering engineer
+
+Construction site engineer
+
+Electrical engineer
+
+Engineering apprentice
+
+Engineering technician
+
+Electrical engineer apprentice
+
+Apprentice engineer
+
+Formula 1 Engineer
+
+Senior system engineer
+
+Structural engineer
+
+Entrepreneur: clothing manufacturer
+
+Estate agent
+
+Events assistant
+
+Coding events manager
+
+Events curator
+
+Executive assistant
+
+Senior content executive
+
+Farmer
+
+Farming union policy advisor
+
+Farrier
+
+Fashion designer
+
+Festival PR director
+
+Festival programme director
+
+Field technician
+
+Film director
+
+Freelance filmmaker
+
+Filmmaker, sports
+
+Filmmaker and vlogger
+
+Financial advisor
+
+Financial service administrator
+
+Firefighter in London
+
+Firefighter in Wales
+
+Chef and food vlogger
+
+Foley artist
+
+Football coach
+
+Front of house usher
+
+Fundraising development officer
+
+Games designer
+
+Gaming company director
+
+Garden designer
+
+Glass-maker
+
+Globemaker
+
+Graphic designer
+
+Graphic designer on Harry Potter
+
+Vlogger: graphic design
+
+Hairdresser: for people with additional needs
+
+Hairdresser apprentice
+
+Horse riding instructor
+
+Humanitarian worker
+
+Illustrator
+
+Vlogger: illustrator
+
+Innovation manager
+
+Intern working on a medical app
+
+Intern working in business development
+
+Interpretation officer
+
+Jewellery maker
+
+Apprentice joiner
+
+Apprentice journalist
+
+Journalist: Correspondent
+
+Journalist: Associate editor
+
+Journalist: online sports
+
+Journalist: science
+
+Karate instructor trainee
+
+Kitchen assistant
+
+Kitchenware maker
+
+Knitwear designer
+
+Landscape assistant
+
+Speech and language therapist
+
+Climate change lawyer
+
+Studio operations lead
+
+Lifeguard
+
+Lighting director
+
+Lighting technician
+
+Locations manager
+
+Machine operator
+
+Makeup business owner
+
+Make up lead: TV
+
+Festival build manager
+
+Coding events manager
+
+Management accountant
+
+Engagement manager
+
+Operations manager
+
+Process optimisation manager
+
+Production manager
+
+Sales performance manager
+
+Stage manager for BBC Introducing Stage
+
+Stage manager at festivals
+
+Streaming manager
+
+Managing director of a start-up company
+
+Digital marketing assistant: Jack's story
+
+Digital marketing assistant: Vanessa's story
+
+Digital marketing specialist
+
+Digital marketing entrepreneur
+
+Digital marketing exec
+
+Marketing intern
+
+Marketing and communications intern
+
+Marketing executive
+
+Apprentice Mechanic
+
+Motorbike mechanic
+
+Mechanical engineer
+
+Media assistant
+
+Assistant media scheduler
+
+Medical student
+
+Medicine management technician
+
+Emergency medical technician
+
+Member of Youth Parliament
+
+Membership coordinator in a museum
+
+Mental health nurse
+
+Mineral technology apprentice
+
+Model and mental health advocate
+
+Model and business owner
+
+Music business owner and DJ
+
+Music curator
+
+Music festival volunteer
+
+Music manager
+
+Music PR manager
+
+Music promoter
+
+Music supervisor
+
+Musician
+
+Naval architect
+
+News editor: online sports
+
+News reporter
+
+Nurse
+
+Critical care nurse
+
+Critical care staff nurse
+
+Orthopaedic scrub nurse
+
+Nursery worker
+
+Occupational therapist
+
+Occupational therapy technical instructor
+
+Apprentice countryside officer
+
+Assistant learning officer
+
+Online entrepreneur in beauty retail
+
+Studio operations lead
+
+Operations manager
+
+Process optimisation manager
+
+Orthotist
+
+Outreach officer at a youth club
+
+Outreach officer in the fire service
+
+Outreach pastor
+
+Festival PR director
+
+Festival programme director
+
+Paper maker
+
+Paralegal apprentice
+
+Paramedic
+
+Personal trainer
+
+Pet food business owner
+
+Pharmacist
+
+Pharmacologist
+
+Photographer
+
+Physicist
+
+Physiotherapist
+
+Director in photography
+
+Pilot: air ambulance
+
+Plumber
+
+Poet and writer
+
+Police officer
+
+Politician
+
+Post-production: CGI
+
+Presenter
+
+Press officer
+
+Process optimisation manager
+
+Producer
+
+Associate producer
+
+Trainee producer
+
+Production manager
+
+Production management assistant
+
+Production accountant
+
+Production assistant
+
+Product designer and entrepreneur
+
+Professional gamer
+
+Trainee prop hand
+
+K-Pop idol
+
+Prop maker
+
+Prosthetic makeup artist
+
+Prosthetist
+
+Public relations account assistant
+
+Pundit
+
+Apprentice quantity surveyor
+
+Therapeutic radiographer
+
+Radio presenter
+
+Radio presenter and producer
+
+Radio and podcast presenter
+
+Radio presenter
+
+Radio producer
+
+Radio visualisation
+
+Receptionist
+
+Recruitment consultant
+
+Recruitment apprentice
+
+Public relations officer
+
+Remote vehicle operator
+
+Music news reporter
+
+Jobs in research
+
+Research scientist and PhD student
+
+Media researcher
+
+Restaurant assistant manager
+
+Restaurant owner
+
+Science apprentice
+
+Science journalist
+
+Science officer
+
+Science researcher
+
+Research scientist and PhD student
+
+Screenwriter
+
+Trainee script editor
+
+Secretary
+
+Zero waste shopkeeper
+
+Shop shift leader
+
+Silversmith
+
+Lewis Capaldi singer-songwriter
+
+Ski racer
+
+Social media chef
+
+Software developer
+
+Software engineer
+
+Software engineer apprentice
+
+Solar farm manager
+
+Soldier
+
+Solicitor (apprentice)
+
+Solicitor (civil law)
+
+Speech and language therapist
+
+Stage manager for the BBC Introducing Stage
+
+Strategist
+
+Stage manager at festivals
+
+Steel fabricator
+
+Story editor
+
+Structural engineer
+
+Studio director
+
+Studio operations lead
+
+Stunt performer
+
+Supervisor
+
+Support worker
+
+Teacher
+
+Tech entrepreneur
+
+Technical theatre apprentice
+
+Lighting technician
+
+Emergency medical technician
+
+Medicine management technician
+
+Creative technologist
+
+Minerals technology apprentice
+
+Tennis player
+
+Therapeutic radiographer
+
+Speech and language therapist
+
+Tour guide
+
+Tour manager
+
+Tree surgeon
+
+TV presenter
+
+TV presenter
+
+Twitter curator
+
+User experience designer
+
+Urgent care desk paramedic
+
+Vet
+
+Veterinary nurse
+
+Trainee vision supervisor
+
+Visual effects artist
+
+Vlogger and illustrator
+
+Volcano vlogger
+
+Chef and food vlogger
+
+Wardrobe assistant
+
+Web developer
+
+Wedding dress designer
+
+Welder
+
+Craft woodworker
+
+Woodworker
+
+Apprentice wing designer
+
+Writer
+
+Screenwriter
+
+YouTube content creator
+
+Zoologist: graduate ecologist

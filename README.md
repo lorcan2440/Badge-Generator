@@ -7,7 +7,7 @@ Utils for quickly making badges for an event from a spreadsheet with info from e
 ### Usage
 
 You will need:
-- a spreadsheet of personal info (example: [SkyHigh Networkers (Responses).xlsx](SkyHigh Networkers (Responses).xlsx))
+- a spreadsheet of personal info (example: [SkyHigh Networkers (Responses).xlsx](SkyHigh Networkers (Responses).xlsx)
 - for people who did not submit a photo in the form, a folder of all their manually submitted photos, linked in the spreadsheet. Downloading images directly from Google Drive requires a [Google app with OAuth consent](https://developers.google.com/drive/api/v3/manage-downloads) and its credentials file (named client_secret.json, not provided here)
 - a logo (example: [logo.jpg](logo.jpg))
 - files: cascade for face detection: [haarcascade_frontalface_default.xml](haarcascade_frontalface_default.xml), the generator: [Badge_Generator.py](Badge_Generator.py)

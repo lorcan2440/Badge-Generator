@@ -66,7 +66,7 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
         end_aspect_ratio: float = PHOTO_ASPECT_RATIO,
         allow_multiple_detections: bool = False, output_dir: str = None,
         output_filename: str = None, show_img: bool = False,
-        must_full_fit: bool = False, on_fail_retry_lower: bool = True) -> np.ndarray:
+        must_full_fit: bool = False, on_fail_decr_thresh: bool = True) -> np.ndarray:
     '''
     Detects a face in an image and extracts the headshot photo.
     
@@ -95,7 +95,7 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
     `show_img` (bool, default = False): if True, show the detected faces and photo boxes in a window
     `must_full_fit` (bool, default = False): if True, raises ValueError if the face is too close to
         the image border i.e. the photo bounding box lies partly outside the image
-    `on_fail_retry_lower` (bool, default = True): if no faces are found, decrease `conf_threshold`
+    `on_fail_decr_thresh` (bool, default = True): if no faces are found, decrease `conf_threshold`
         by 0.1 and try again. This will only be done once.
 
     #### Returns
@@ -150,7 +150,7 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
     bboxes.sort(key=lambda bbox: bbox[4], reverse=True)
     
     if len(bboxes) == 0:
-        if on_fail_retry_lower:
+        if on_fail_decr_thresh:
             return get_profile_photo(img, scale_factor=scale_factor, size=size, bgr_mean=bgr_mean,
                 swapRB=swapRB, ddepth=ddepth, conf_threshold=conf_threshold - 0.1,
                 dnn_type=dnn_type, dnn_model_file=dnn_model_file,
@@ -158,7 +158,7 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
                 expand_x=expand_x, expand_y=expand_y, end_aspect_ratio=end_aspect_ratio,
                 allow_multiple_detections=allow_multiple_detections, output_dir=output_dir,
                 output_filename=output_filename, show_img=show_img, must_full_fit=must_full_fit,
-                on_fail_retry_lower=False)                                                           
+                on_fail_decr_thresh=False)
         else:
             raise RuntimeError(f'Found no faces in this image, '
             f'with confidence level {conf_threshold}.')
@@ -526,11 +526,6 @@ def generate_badge_pdf(source: Union[str, list[tuple[str, Image.Image]]],
 ######################################
 ############# -- Main -- #############
 ######################################
-
-remove_bg = remove_background_from_photo('Submitted Images/502.jpg')
-profile_photo = get_profile_photo(remove_bg, show_img=True)
-if isinstance(profile_photo, list):
-    profile_photo = profile_photo[0]
 
 if __name__ == '__main__':
 

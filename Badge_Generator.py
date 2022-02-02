@@ -5,84 +5,16 @@ import subprocess
 
 # third-party libraries
 from mediapipe.python.solutions import selfie_segmentation
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 from fpdf import FPDF
 import pandas as pd
 import numpy as np
 import cv2
+from sklearn.preprocessing import scale
 
 # local imports
-from download_from_drive import download_file, authenticate_access
-
-
-######################################
-########## -- Parameters -- ##########
-######################################
-
-# sources
-EXCEL_SPREADSHEET = ('SkyHigh Networkers (Responses).xlsx', 'Form Responses 1')
-LOGO_PATH = 'logo.jpg'
-DNN_MODEL_FILE = 'cv-models/face-detection/opencv_face_detector_uint8.pb'
-DNN_CONFIG_FILE = 'cv-models/face-detection/opencv_face_detector.pbtxt'
-
-# destinations
-BADGE_TEMPLATE = 'Template.png'
-PHOTOS_DIR = 'Submitted Images'
-BADGES_DIR = 'Badges'
-PDF_NAME = 'Badges.pdf'
-
-# badge dimensions
-PDF_ROWS = 4
-PDF_COLUMNS = 2
-BADGE_WIDTH = 1340
-BADGE_HEIGHT = 1000
-BORDER = 0.025
-A4_WIDTH = 210
-A4_HEIGHT = 297
-
-# colours
-BG_COL = '#ffffff'
-PHOTO_BG_COL = '#dddddd'
-MAIN_TEXT_COL = '#000000'
-TITLE_CARD_COL = '#01385f'
-TITLE_TEXT_COL = '#ffffff'
-
-# fonts - find font filenames by going to C:/Windows/Fonts.
-# choose a family and font and view properties.
-TITLE_FONT_SIZE = ImageFont.truetype('BOD_BI.TTF', 90)
-PRIMARY_KEY_FONT_SIZE = ImageFont.truetype('arial.ttf', 60)
-PRIMARY_VALUE_FONT_SIZE = ImageFont.truetype('arialbd.ttf', 60)
-SECONDARY_KEY_FONT_SIZE = ImageFont.truetype('arialbi.ttf', 60)
-SECONDARY_VALUE_FONT_SIZE = ImageFont.truetype('ariali.ttf', 60)
-
-# title card
-TITLE_CARD_HEIGHT_RATIO = 0.18
-TITLE_TEXT = 'SkyHigh Networkers'
-
-# photo
-PHOTO_HEIGHT_RATIO = 0.4725
-PHOTO_WIDTH_RATIO = 0.30
-PHOTO_BG_REMOVE_THRESHOLD = 0.8
-_PHOTO_ASPECT_RATIO = (PHOTO_HEIGHT_RATIO * BADGE_HEIGHT) / (PHOTO_WIDTH_RATIO * BADGE_WIDTH)
-
-# logo
-LOGO_WIDTH_RATIO = 0.29
-LOGO_HEIGHT_RATIO = 0.41
-
-# information
-PRIMARY_KEYS = 'Name:\nRole:\nAt'
-SECONDARY_KEYS = 'Pronouns:\nID No.:'
-
-# info dimensions and relations
-INFO_PRIMARY_SPACING = 0.015
-INFO_SECONDARY_SPACING = 9 * INFO_PRIMARY_SPACING
-INFO_SECONDARY_VERTICAL_OFFSET = 0.7
-INFO_KEY_POS = {
-    PRIMARY_KEYS: (2 * BORDER * BADGE_WIDTH,
-        (4 * BORDER + TITLE_CARD_HEIGHT_RATIO + PHOTO_HEIGHT_RATIO) * BADGE_HEIGHT, True),
-    SECONDARY_KEYS: ((2 * BORDER + PHOTO_WIDTH_RATIO) * BADGE_WIDTH,
-        (3 * BORDER + TITLE_CARD_HEIGHT_RATIO) * BADGE_HEIGHT, False),
-}
+from badge_utils import *
+from badge_settings import *
 
 
 ######################################
@@ -90,7 +22,7 @@ INFO_KEY_POS = {
 ######################################
 
 
-def remove_background_from_photo(img: np.ndarray, imgBg: tuple = PHOTO_BG_COL,
+def remove_background_from_photo(img: np.ndarray, fill_bg_col: tuple = PHOTO_BG_COL,
         threshold: float = PHOTO_BG_REMOVE_THRESHOLD, model: int = 0) -> np.ndarray:
     '''
     Removes the background of a person's photo, leaving only the person.
@@ -98,8 +30,8 @@ def remove_background_from_photo(img: np.ndarray, imgBg: tuple = PHOTO_BG_COL,
     #### Arguments
     
     `img` (np.ndarray): input photo containing a person
-    `imgBg` (tuple, default = PHOTO_BG_COL): solid color to replace the background with,
-        either in form (R, G, B) or '#RRGGBB'
+    `fill_bg_col` (tuple, default = PHOTO_BG_COL): solid color to replace the background with,
+        either in form (R, G, B) (values from 0 to 255) or '#RRGGBB' (hex values)
     `threshold` (float, default = PHOTO_BG_REMOVE_THRESHOLD): higher makes it
         more likely to remove background
     `model` (int, default = 0): selfie segmentation model
@@ -113,27 +45,28 @@ def remove_background_from_photo(img: np.ndarray, imgBg: tuple = PHOTO_BG_COL,
         img = cv2.imread(img)
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = seg.process(imgRGB)
-    condition = np.stack(
-        (results.segmentation_mask,) * 3, axis=-1) > threshold
-    if isinstance(imgBg, tuple):
-        _imgBg = np.zeros(img.shape, dtype=np.uint8)
-        _imgBg[:] = imgBg
-        imgOut = np.where(condition, img, _imgBg)
+    condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > threshold
+    if isinstance(fill_bg_col, tuple):
+        fill_bg_col_bgr = (fill_bg_col[2], fill_bg_col[1], fill_bg_col[0])
+        _img_bg = np.zeros(img.shape, dtype=np.uint8)
+        _img_bg[:] = fill_bg_col_bgr
+        imgOut = np.where(condition, img, _img_bg)
     else:
-        bg_tuple = tuple(int(imgBg.lstrip('#').upper()[i:i + 2], 16) for i in (0, 2, 4))
+        bg_tuple = tuple(int(fill_bg_col.lstrip('#').upper()[i:i + 2], 16) for i in (0, 2, 4))
         return remove_background_from_photo(img, bg_tuple, threshold, model)
     return imgOut
 
 
 def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
         size: tuple[int] = (300, 300), bgr_mean: list[int] = [104, 117, 123],
-        swapRB: bool = False, ddepth: int = cv2.CV_32F, conf_threshold: float = 0.75,
+        swapRB: bool = False, ddepth: int = cv2.CV_32F, conf_threshold: float = 0.85,
         dnn_type: str = 'TensorFlow', dnn_model_file: str = DNN_MODEL_FILE,
         dnn_config_file: str = DNN_CONFIG_FILE, expand_dim_first: str = 'x',
         expand_x: float = 0.75, expand_y: float = 1.125,
-        end_aspect_ratio: float = _PHOTO_ASPECT_RATIO,
+        end_aspect_ratio: float = PHOTO_ASPECT_RATIO,
         allow_multiple_detections: bool = False, output_dir: str = None,
-        output_filename: str = None, show_img: bool = False) -> np.ndarray:
+        output_filename: str = None, show_img: bool = False,
+        must_full_fit: bool = False, on_fail_retry_lower: bool = True) -> np.ndarray:
     '''
     Detects a face in an image and extracts the headshot photo.
     
@@ -144,7 +77,7 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
     `size` (tuple[int], default = (300, 300)): spatial size for output image
     `bgr_mean` (list[int], default = [104, 117, 123]): mean BGR (or RGB if `swapRB`) of image
     `swapRB` (bool, default = False): set to True if `img` is an RGB image instead of BGR
-    `conf_threshold` (float, default = 0.75): minimum confidence to count as a face
+    `conf_threshold` (float, default = 0.85): minimum confidence to count as a face
     `dnn_type` (str, default = 'TensorFlow'): either 'TensorFlow' or 'Caffe' as the detection method
     `dnn_model_file` (str, default = DNN_MODEL_FILE): path to face detector model file
     `dnn_config_file` (str, default = DNN_CONFIG_FILE): path to face detector config file
@@ -160,7 +93,11 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
     `output_filename` (str, default = None): if set, save the photo(s) as this filename.
         If multiple photos found, the names will be enumerated in decreasing order of confidence
     `show_img` (bool, default = False): if True, show the detected faces and photo boxes in a window
-    
+    `must_full_fit` (bool, default = False): if True, raises ValueError if the face is too close to
+        the image border i.e. the photo bounding box lies partly outside the image
+    `on_fail_retry_lower` (bool, default = True): if no faces are found, decrease `conf_threshold`
+        by 0.1 and try again. This will only be done once.
+
     #### Returns
     
     np.ndarray: photo images, in NumPy array format. If `allow_multiple_detections` and
@@ -170,20 +107,23 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
     
     #### Raises
     
-    `ValueError`: if multiple faces are found and `allow_multiple_detections` is False (default)
-    `ValueError`: if `dnn_type` is not either 'TF' or 'CAFFE'
+    `RuntimeError`: if multiple faces are found and `allow_multiple_detections` is False
+    `ValueError`: if `dnn_type` is not either 'TensorFlow' or 'Caffe'
+    `ValueError`: if `must_full_fit` is True and the face is too close to the image border
+        i.e. the photo bounding box lies partly outside the image
+    `OSError`: if either of the DNN model/config files could not be found
     '''
-
+    
     if dnn_type.lower().startswith('c'):
         if os.path.isfile(dnn_config_file) and os.path.isfile(dnn_model_file):
             net = cv2.dnn.readNetFromCaffe(dnn_config_file, dnn_model_file)
         else:
-            raise ValueError('Could not find Caffe config and/or Model file(s)')
+            raise OSError('Could not find Caffe config and/or Model file(s)')
     elif dnn_type.lower().startswith('t'):
         if os.path.isfile(dnn_config_file) and os.path.isfile(dnn_model_file):
             net = cv2.dnn.readNetFromTensorflow(dnn_model_file, dnn_config_file)
         else:
-            raise ValueError('Could not find Tensorflow config and/or Model file(s)')
+            raise OSError('Could not find Tensorflow config and/or Model file(s)')
     else:
         raise ValueError('dnn_type must be either "tensorflow" or "caffe".')
 
@@ -210,33 +150,48 @@ def get_profile_photo(img: Union[np.ndarray, str], scale_factor: float = 1.0,
     bboxes.sort(key=lambda bbox: bbox[4], reverse=True)
     
     if len(bboxes) == 0:
-        return None
+        if on_fail_retry_lower:
+            return get_profile_photo(img, scale_factor=scale_factor, size=size, bgr_mean=bgr_mean,
+                swapRB=swapRB, ddepth=ddepth, conf_threshold=conf_threshold - 0.1,
+                dnn_type=dnn_type, dnn_model_file=dnn_model_file,
+                dnn_config_file=dnn_config_file, expand_dim_first=expand_dim_first,
+                expand_x=expand_x, expand_y=expand_y, end_aspect_ratio=end_aspect_ratio,
+                allow_multiple_detections=allow_multiple_detections, output_dir=output_dir,
+                output_filename=output_filename, show_img=show_img, must_full_fit=must_full_fit,
+                on_fail_retry_lower=False)                                                           
+        else:
+            raise RuntimeError(f'Found no faces in this image, '
+            f'with confidence level {conf_threshold}.')
     elif len(bboxes) > 1:
         photos = []
         if allow_multiple_detections:
             for i, bbox in enumerate(bboxes, start=1):
-                filename, fileext = os.path.splitext(output_filename)
+                if output_filename is not None:
+                    filename, fileext = os.path.splitext(output_filename)
+                    output_filename = f'{filename}-{i}{fileext}'
                 photo = photo_from_bbox(img, bbox, expand_dim_first=expand_dim_first,
                     expand_x=expand_x, expand_y=expand_y, end_aspect_ratio=end_aspect_ratio,
-                    output_dir=output_dir, output_filename=f'{filename}-{i}{fileext}',
-                    show_img=show_img)
+                    output_dir=output_dir, output_filename=output_filename,
+                    show_img=show_img, must_full_fit=must_full_fit)
                 photos.append(photo)
             return photos
         else:
-            raise ValueError(f'Found {len(bboxes)} faces in this image.'
-            'If only one face was expected, try increasing `conf_threshold`.'
+            raise RuntimeError(f'Found {len(bboxes)} faces in this image. '
+            'If only one face was expected, try increasing `conf_threshold`. '
             'To allow all detections, set `allow_multiple_detections=True`.')
     else:
         photo = photo_from_bbox(img, bboxes[0], expand_dim_first=expand_dim_first,
                     expand_x=expand_x, expand_y=expand_y, end_aspect_ratio=end_aspect_ratio,
-                    output_dir=output_dir, output_filename=output_filename, show_img=show_img)
+                    output_dir=output_dir, output_filename=output_filename,
+                    show_img=show_img, must_full_fit=must_full_fit)
         return photo
 
 
 def photo_from_bbox(img: np.ndarray, bbox: tuple[int], expand_dim_first: str = 'x',
         expand_x: float = 0.3, expand_y: float = 0.45,
         end_aspect_ratio: float = 1.18, output_dir: str = None,
-        output_filename: str = None, show_img: bool = False) -> np.ndarray:
+        output_filename: str = None, show_img: bool = False,
+        must_full_fit: bool = False) -> np.ndarray:
     '''
     Extends a bounding box from the face detection to a specific size and saves if required.
     
@@ -253,10 +208,17 @@ def photo_from_bbox(img: np.ndarray, bbox: tuple[int], expand_dim_first: str = '
     `output_dir` (str, default = None): if set, save the photo(s) to this directory
     `output_filename` (str, default = None): if set, save the photo(s) as this filename
     `show_img` (bool, default = False): if True, show the detected faces and photo boxes in a window
-    
+    `must_full_fit` (bool, default = False): if True, raises ValueError if the face is too close to
+        the image border i.e. the photo bounding box lies partly outside the image
+
     #### Returns
     
     np.ndarray: the photo for this bounding box in the image
+
+    #### Raises
+
+    `ValueError`: if `must_full_fit` is True and the face is too close to the image border
+        i.e. the photo bounding box lies partly outside the image
     '''
 
     x1, y1, x2, y2, *_ = bbox
@@ -296,12 +258,23 @@ def photo_from_bbox(img: np.ndarray, bbox: tuple[int], expand_dim_first: str = '
     if output_dir is not None:
         cv2.imwrite(os.path.join(output_dir, output_filename))
 
+    if must_full_fit and any([photo_bbox[0] == 0, photo_bbox[1] == 0,
+            photo_bbox[2] == img_width, photo_bbox[3] == img_height]):
+        if photo_bbox[0] == 0: close_edge = 'left'
+        elif photo_bbox[1] == 0: close_edge = 'top'
+        elif photo_bbox[2] == img_width: close_edge = 'right'
+        elif photo_bbox[3] == img_height: close_edge = 'bottom'
+        raise ValueError(f'Face bounding box is too close to the {close_edge} edge of the '
+        'image so a sufficiently large photo could not be made without distortion. Try reducing '
+        f'{"expand_x" if close_edge in ["left", "right"] else "expand_y"} or using an image where '
+        'the face is closer to the centre.')
+
     if show_img:
         img_marked = cv2.rectangle(img.copy(), photo_bbox[:2], photo_bbox[2:], (255, 0, 0),
             thickness=img_width // 400)
         img_marked = cv2.rectangle(img_marked, bbox[:2], bbox[2:4], (0, 0, 255),
             thickness=img_width // 400)
-        cv2.namedWindow('Found Boxes')
+        cv2.namedWindow('Found Boxes', cv2.WINDOW_NORMAL)
         cv2.imshow('Found Boxes', img_marked)
         cv2.waitKey(0)
 
@@ -341,12 +314,16 @@ def resize_keep_aspect_ratio(image: np.ndarray, width: int = None, height: int =
     return cv2.resize(image, dim, interpolation=interpolation)
 
 
-def generate_id_badge_template() -> Image.Image:
+def generate_badge_template(filename: str = None) -> Image.Image:
     '''
-    Creates a template badge.
-    
+    Creates a template badge from the `badge_settings.py` config file.
+
+    #### Arguments
+
+    `filename` (str, default = None): if set, save the template image as this filename
+
     #### Returns
-    
+
     Image.Image: template image
     '''
 
@@ -355,15 +332,9 @@ def generate_id_badge_template() -> Image.Image:
                   int(BORDER * BADGE_HEIGHT)),
                 (int((1 - BORDER) * BADGE_WIDTH),
                 int((BORDER + TITLE_CARD_HEIGHT_RATIO) * BADGE_HEIGHT))]
-    logo_img = Image.open(LOGO_PATH)
-    logo_img = logo_img.resize((int(LOGO_WIDTH_RATIO * BADGE_WIDTH),
-                                int(LOGO_HEIGHT_RATIO * BADGE_HEIGHT)),
-                                resample=Image.ANTIALIAS)
-    logo_pos = (int((1 - BORDER - LOGO_WIDTH_RATIO) * BADGE_WIDTH),
-        int((2 * BORDER + TITLE_CARD_HEIGHT_RATIO) * BADGE_HEIGHT))
 
     # empty image
-    image = Image.new('RGB', (BADGE_WIDTH, BADGE_HEIGHT), BG_COL)
+    image = Image.new('RGBA', (BADGE_WIDTH, BADGE_HEIGHT), BG_COL)
     imagedraw = ImageDraw.Draw(image)
 
     # title
@@ -372,9 +343,6 @@ def generate_id_badge_template() -> Image.Image:
     imagedraw.text((int((BADGE_WIDTH - title_w) // 2),
                     int(((BORDER + TITLE_CARD_HEIGHT_RATIO) * BADGE_HEIGHT - title_h) // 2)),
                     TITLE_TEXT, fill=TITLE_TEXT_COL, font=TITLE_FONT_SIZE)
-
-    # logo
-    image.paste(logo_img, logo_pos)
 
     # info keys
     for key, (x, y, is_primary) in INFO_KEY_POS.items():
@@ -391,13 +359,18 @@ def generate_id_badge_template() -> Image.Image:
                 spacing=INFO_SECONDARY_SPACING * BADGE_HEIGHT,
                 font=SECONDARY_KEY_FONT_SIZE, align='center')
 
+    # save if required
+    if filename is not None:
+        image.save(filename)
+
     # return a PIL.Image.Image, already opened and ready
     return image
 
 
-def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
+def generate_badge(template: Union[str, Image.Image],
+        firstname: str, lastname: str, role: str, company: str,
         pronouns: str, id_no: str, photo: Union[np.ndarray, Image.Image],
-        export_dir: str = None, template: Union[str, Image.Image] = BADGE_TEMPLATE,
+        logo_path: str, export_dir: str = None,
         filename_format: str = r"f'{lastname.upper()}_{firstname}.png'",
         primary_value_format: str = r"f'{name}\n{role}\n{company}'",
         secondary_value_format: str = r"f'{pronouns}\n{id_no.upper()}'") -> Image.Image:
@@ -406,10 +379,11 @@ def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
    
     #### Arguments
 
+    `template` (Union[str, Image.Image]): badge to fill in
     `firstname`, `lastname`, `role`, `company`, `pronouns`, `id_no` (str): text field values
     `photo` (Union[np.ndarray, Image.Image]): photo to use, in PIL Image or NumPy array form
+    `logo_path` (str): string path to logo to use. If UNSPECIFIED_VALUE, does not use a logo.
     `export_dir` (str, default = BADGES_DIR): where to save badge image
-    `template` (Union[str, Image.Image], default = BADGE_TEMPLATE): badge to fill in
     `filename_format` (str, default = r"f'{lastname.upper()}_{firstname}.png'"): format to save
         individual badges as
     `primary_value_format` (str, default = r"f'{name}\\n{role}\\n{company}'"): format to write
@@ -425,13 +399,14 @@ def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
 
     #### Returns
 
-    Image.Image: PIL Image of the generated ID badge
+    Image.Image: PIL Image of the generated badge
     '''    
 
     if export_dir is not None:
         if not os.path.isdir(export_dir):
             os.mkdir(export_dir)
 
+    # placeholders for use in string formats
     _ = [firstname, lastname, role, company, pronouns, id_no, photo]
     name = f'{firstname} {lastname}'
     initials_lastname = f"{' '.join([part[0] + '.' for part in firstname.replace('-', ' ').split(' ')])} {lastname}"
@@ -439,7 +414,7 @@ def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
     role_company = f'{role} at {company}'
 
     # start from template
-    image = template if isinstance(template, Image.Image) else Image.open(template)
+    image = template.copy() if isinstance(template, Image.Image) else Image.open(template)
     imagedraw = ImageDraw.Draw(image)
 
     # photo
@@ -452,6 +427,21 @@ def generate_id_badge(firstname: str, lastname: str, role: str, company: str,
     photo = photo.resize(photo_resize, resample=Image.ANTIALIAS)
     image.paste(photo, photo_pos)
 
+    # logo
+    if logo_path is not None:
+        logo_img = Image.open(logo_path)
+        logo_img = logo_img.resize((int(LOGO_WIDTH_RATIO * BADGE_WIDTH),
+                                    int(LOGO_HEIGHT_RATIO * BADGE_HEIGHT)),
+                                    resample=Image.ANTIALIAS)
+        logo_pos = (int((1 - BORDER - LOGO_WIDTH_RATIO) * BADGE_WIDTH),
+            int((2 * BORDER + TITLE_CARD_HEIGHT_RATIO) * BADGE_HEIGHT))
+
+        # XXX: there may be some edge cases left over, but this catches the common file types
+        if has_transparency(logo_img):
+            image.paste(logo_img, logo_pos, mask=logo_img.convert("RGBA"))
+        else:
+            image.paste(logo_img, logo_pos)
+        
     # info value primary fields
     info_text_multiline = eval(primary_value_format, locals())
     key_bbox = imagedraw.multiline_textbbox(
@@ -537,6 +527,11 @@ def generate_badge_pdf(source: Union[str, list[tuple[str, Image.Image]]],
 ############# -- Main -- #############
 ######################################
 
+remove_bg = remove_background_from_photo('Submitted Images/502.jpg')
+profile_photo = get_profile_photo(remove_bg, show_img=True)
+if isinstance(profile_photo, list):
+    profile_photo = profile_photo[0]
+
 if __name__ == '__main__':
 
     # open excel workbook - install openpyxl dependency if not working
@@ -546,44 +541,54 @@ if __name__ == '__main__':
         subprocess.check_call(['pip', 'install', 'openpyxl'])
         df = pd.read_excel(*EXCEL_SPREADSHEET)
 
-    # clean data - remove empty rows and replace empty cells with "(unspecified)"
+    # clean data - remove empty rows and replace empty cells with a placeholder
     df.dropna(axis=0, how='all', inplace = True)
-    df.fillna('(unspecified)', inplace=True)
+    df.fillna(UNSPECIFIED_VALUE, inplace=True)
     num_people = len(df.index)
 
     # make badge template and init list of badge images
-    badge_template = generate_id_badge_template()
-    badge_template.save(BADGE_TEMPLATE)
+    badge_template = generate_badge_template()
     all_badges: list[tuple[str, Image.Image]] = []
+    service = None
     errored_rows = []
-    
-    # manual sign-in required if first time in a while
-    service = authenticate_access()
 
     # process spreadsheet row by row
     for i, (line, row) in enumerate(df.iterrows(), start=1):
         
         try:
             # get relevant fields, placeholder _ will contain timestamp and email of google entries
-            *_, firstname, lastname, role, company, pronouns, id_no, image_name = row.values
+            *_, firstname, lastname, role, company, pronouns, id_no, img, logo = row.values
 
             # get path to submitted photo
-            photo_path = f'{lastname.upper()}_{firstname}_{id_no[:4]}.jpg'
-            if 'https://drive.google.com/open' in image_name:
-                # fetch from Google Drive
-                download_file(image_name, photo_path, service=service, output_dir=PHOTOS_DIR)
+            if 'https://drive.google.com/open' in img:
+                # fetch from Google Drive - manual sign-in required if first time in a while
+                photo_path = f'{lastname.upper()}_{firstname}_{id_no[:4]}.jpg'
+                download_file(img, photo_path, service=service, output_dir=PHOTOS_DIR)
                 image_path = os.path.join(PHOTOS_DIR, photo_path)
             else:
                 # fetch from local folder (manually submitted images)
-                image_path = os.path.join(PHOTOS_DIR, image_name)
+                image_path = os.path.join(PHOTOS_DIR, img) if img != UNSPECIFIED_VALUE else None
+
+            # get path to submitted logo
+            if 'https://drive.google.com/open' in logo:
+                # fetch from Google Drive - manual sign-in required if first time in a while
+                logo_path = f'{company}_{lastname.upper()}_{firstname}_{id_no[:4]}.png'
+                download_file(logo, logo_path, service=service, output_dir=LOGOS_DIR)
+                logo_path = os.path.join(LOGOS_DIR, logo_path)
+            else:
+                # fetch from local folder (manually submitted images)
+                logo_path = os.path.join(LOGOS_DIR, logo) if logo != UNSPECIFIED_VALUE else None
 
             # get clean headshot profile picture
             remove_bg = remove_background_from_photo(image_path)
             profile_photo = get_profile_photo(remove_bg)
+            if isinstance(profile_photo, list):
+                profile_photo = profile_photo[0]
 
             # make the badge
-            badge = generate_id_badge(firstname, lastname, role, company, pronouns, id_no,
-                profile_photo, export_dir=BADGES_DIR)
+            badge = generate_badge(badge_template,
+                firstname, lastname, role, company, pronouns, id_no,
+                profile_photo, logo_path, export_dir=BADGES_DIR)
 
             # add to list of badges
             all_badges.append((f'{lastname}, {firstname} - {id_no}', badge))
@@ -592,7 +597,8 @@ if __name__ == '__main__':
         except Exception as e:
 
             print(f'Warning: Failed to create badge for {firstname} {lastname} \n'
-            f'Sheet row {line + 1} - row contents: \n {row} \n Error message: \n {e}')
+            f'Sheet row {line + 2} - row contents: \n{row} \n'
+            f'Error type: {type(e).__name__}\nError message: \n {e}')
             errored_rows.append(f'{firstname} {lastname}')
             continue
 

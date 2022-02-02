@@ -1,4 +1,3 @@
-client_secret.json
-token_drive_v3.pickle
-cv-models/
+assets/client_secret.json
+assets/token_drive_v3.pickle
 __pycache__
